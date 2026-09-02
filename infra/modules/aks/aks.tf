@@ -9,6 +9,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
   resource_group_name = azurerm_resource_group.rg.name
   dns_prefix          = "aksfree"
 
+  oidc_issuer_enabled = true
+  workload_identity_enabled = true
+
   default_node_pool {
     name       = "default"
     node_count = var.node_count
@@ -17,6 +20,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   identity {
     type = "SystemAssigned"
+  }
+
+
+  lifecycle {
+    ignore_changes = [
+      default_node_pool[0].upgrade_settings,
+    ]
   }
 
   tags = {

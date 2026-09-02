@@ -20,6 +20,8 @@ resource "helm_release" "nginx_ingress" {
       service:
         type: LoadBalancer
         loadBalancerIP: "${var.public_ip_address}"
+        annotations:
+          service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
     defaultBackend:
       nodeSelector:
         kubernetes.io/os: linux
