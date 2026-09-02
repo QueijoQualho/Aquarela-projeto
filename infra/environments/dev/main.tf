@@ -38,3 +38,8 @@ module "monitoring" {
   source     = "../../modules/monitoring"
   depends_on = [module.aks]
 }
+
+module "logging" {
+  source            = "../../modules/logging"
+  depends_on        = [module.aks]
+}
