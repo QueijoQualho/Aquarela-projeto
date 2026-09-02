@@ -33,3 +33,8 @@ module "ingress_nginx" {
 #   source     = "../../modules/keda"
 #   depends_on = [module.aks]
 # }
+
+module "monitoring" {
+  source     = "../../modules/monitoring"
+  depends_on = [module.aks]
+}
