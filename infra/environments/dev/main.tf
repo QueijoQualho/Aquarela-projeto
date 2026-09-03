@@ -29,10 +29,6 @@ module "ingress_nginx" {
   depends_on          = [module.aks, azurerm_public_ip.ingress_ip]
 }
 
-# module "keda" {
-#   source     = "../../modules/keda"
-#   depends_on = [module.aks]
-# }
 
 module "monitoring" {
   source     = "../../modules/monitoring"
@@ -40,6 +36,6 @@ module "monitoring" {
 }
 
 module "logging" {
-  source            = "../../modules/logging"
-  depends_on        = [module.aks]
+  source     = "../../modules/logging"
+  depends_on = [module.aks]
 }

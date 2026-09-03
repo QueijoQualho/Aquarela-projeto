@@ -69,3 +69,29 @@ resource "kubernetes_ingress_v1" "grafana" {
 
   depends_on = [helm_release.kube_prometheus_stack]
 }
+
+resource "kubectl_manifest" "sock_shop_alert" {
+  yaml_body = <<-YAML
+    apiVersion: monitoring.coreos.com/v1
+    kind: PrometheusRule
+    metadata:
+      name: sock-shop-alerts
+      namespace: monitoring
+      labels:
+        release: monitoring
+    spec:
+      groups:
+        - name: sock-shop.rules
+          rules:
+            - alert: FrontEndDown
+              expr: kube_deployment_status_replicas_available{namespace="sock-shop", deployment="front-end"} == 0
+              for: 2m
+              labels:
+                severity: critical
+              annotations:
+                summary: "Front-end está fora do ar"
+                description: "O deployment front-end está com 0 réplicas disponíveis há mais de 2 minutos."
+  YAML
+
+  depends_on = [helm_release.kube_prometheus_stack]
+}
