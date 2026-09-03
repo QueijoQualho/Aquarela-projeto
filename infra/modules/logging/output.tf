@@ -21,3 +21,7 @@ output "kibana_ingress_host" {
 output "logging_namespace" {
   value       = kubernetes_namespace.logging.metadata[0].name
 }
+
+output "es_credentials" {
+  value = "elastic:${data.kubernetes_secret.es_credentials.data["password"]}"
+}

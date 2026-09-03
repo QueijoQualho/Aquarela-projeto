@@ -136,3 +136,82 @@ resource "kubernetes_ingress_v1" "kibana" {
 
   depends_on = [helm_release.kibana]
 }
+
+data "kubernetes_secret" "es_credentials" {
+  metadata {
+    name      = "elasticsearch-master-credentials"
+    namespace = kubernetes_namespace.logging.metadata[0].name
+  }
+  depends_on = [helm_release.elasticsearch]
+}
+
+resource "null_resource" "install_apm_integration" {
+  depends_on = [helm_release.kibana, helm_release.apm_server]
+
+  triggers = {
+    kibana_release = helm_release.kibana.id
+    apm_release    = helm_release.apm_server.id
+  }
+
+  provisioner "local-exec" {
+    environment = {
+      ES_PASS = data.kubernetes_secret.es_credentials.data["password"]
+    }
+    command = <<-EOT
+      kubectl run apm-integration-install --rm -i --image=curlimages/curl -n logging --restart=Never -- \
+        curl -s -X POST "http://kibana-kibana:5601/api/fleet/epm/packages/apm/8.5.1" \
+        -H "kbn-xsrf: true" \
+        -H "Content-Type: application/json" \
+        -u "elastic:$ES_PASS" \
+        -d '{"force": true}'
+    EOT
+  }
+}
+
+resource "helm_release" "apm_server" {
+  name       = "apm-server"
+  repository = "https://helm.elastic.co"
+  chart      = "apm-server"
+  namespace  = kubernetes_namespace.logging.metadata[0].name
+  version    = "8.5.1"
+
+  values = [
+    <<-EOF
+    imageTag: "8.5.1"
+
+    replicas: 1
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    extraEnvs:
+      - name: ES_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: elasticsearch-master-credentials
+            key: password
+
+    apmConfig:
+      apm-server.yml: |
+        apm-server:
+          host: "0.0.0.0:8200"
+
+        output.elasticsearch:
+          hosts:
+            - "https://elasticsearch-master:9200"
+          username: "elastic"
+          password: "$${ES_PASSWORD}"
+          ssl:
+            verification_mode: "none"
+    EOF
+  ]
+
+  depends_on = [
+    helm_release.elasticsearch
+  ]
+}
