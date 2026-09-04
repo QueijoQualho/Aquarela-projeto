@@ -58,8 +58,7 @@ terraform apply -target=module.aks
 
 # 2ª rodada: obter credenciais do AKS e aplicar o resto da infraestrutura
 az aks get-credentials --resource-group rg-aks-dev --name aks-dev --overwrite-existing
-
-terraform apply
+terraform apply -auto-approve
 ```
 
 ### 4. Descobrir os IPs e configurar acesso local
@@ -85,6 +84,21 @@ Isso mostra o IP público do ingress-nginx. Adiciona no seu `/etc/hosts` (ajusta
 | Kibana | `https://kibana.local` | `elastic` / obtida via `kubectl get secret elasticsearch-master-credentials -n logging -o jsonpath='{.data.password}' \| base64 -d` |
 
 Como os certificados são **self-signed** (sem domínio real), o navegador vai avisar sobre certificado inválido — é esperado, basta prosseguir mesmo assim.
+
+
+### Comandos Utilizados no Teste do APM
+Como as Imagens do Sock Shop não tem o APM integrado, é necessário adicionar manualmente.
+
+```bash
+kubectl run apm-test --rm -i --image=curlimages/curl -n logging --restart=Never --   sh -c 'curl -X POST "http://apm-server-apm-server:8200/intake/v2/events" -H "Content-Type: application/x-ndjson" --data-binary "{\"metadata\": {\"service\": {\"name\": \"front-end\", \"agent\": {\"name\": \"manual-test\", \"version\": \"1.0\"}}}}
+{\"transaction\": {\"id\": \"0102030405060708\", \"trace_id\": \"0102030405060708090a0b0c0d0e0f10\", \"name\": \"GET /\", \"type\": \"request\", \"duration\": 32.5, \"span_count\": {\"started\": 0}}}"'
+```
+
+```bash
+kubectl exec -it elasticsearch-master-0 -n logging -- \
+curl -s -k -u "elastic:$(kubectl get secret elasticsearch-master-credentials -n logging -o jsonpath='{.data.password}' | base64 -d)" \
+"https://localhost:9200/traces-apm*/_search?q=service.name:front-end"
+```
 
 ---
 
@@ -114,13 +128,11 @@ manifests/                 # YAMLs da Sock Shop
 
 ## Decisões de design e por quê
 
-**Terraform Modules Pattern**. Organização modular dos recursos, facilitando reutilização e manutenção.
-
 **Backend local em vez de remoto (Azure Storage Account).**
 Não há necessidade de state compartilhado em equipe nesse projeto, então backend local foi suficiente e evitou o trabalho de provisionar um Storage Account só para isso.
 
 **cert-manager com `ClusterIssuer` self-signed**
-O ambiente não tem domínio público real, e o desafio de validação `http01` do Let's Encrypt exige DNS resolvível publicamente. Self-signed atende ao requisito de "emissão de certificado" sem essa dependência.
+Como o ambiente não possui um domínio público, foi utilizado um ClusterIssuer do tipo selfSigned. Essa abordagem permite emitir certificados TLS para os serviços internos sem depender de um domínio público ou da validação http01 do Let's Encrypt, sendo adequada para o ambiente de desenvolvimento e demonstração do projeto.
 
 **Utilização do `kubectl_manifest` (provider `alekc/kubectl`)**
 O provider `kubernetes_manifest` nativo faz introspecção do schema do CRD no momento do `plan`/`apply`/`destroy`, o que causa falhas recorrentes quando o CRD (`ClusterIssuer`, criado pelo cert-manager) ainda não está totalmente registrado na API do cluster. O `kubectl_manifest` aplica de forma mais direta, sem essa validação, evitando o problema.
