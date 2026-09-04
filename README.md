@@ -1,4 +1,4 @@
-# Aquarela Projeto — Infraestrutura AKS com Observabilidade
+# Aquarela - Desafio técnico
 
 Infraestrutura como código (Terraform) para provisionar um cluster **AKS** na Azure e rodar a aplicação de demonstração **Sock Shop** (microsserviços), com ingress, TLS, e uma stack completa de observabilidade: métricas, logs e APM.
 
@@ -12,6 +12,16 @@ Infraestrutura como código (Terraform) para provisionar um cluster **AKS** na A
 | Métricas | Prometheus + Grafana + Alertmanager | Helm `kube-prometheus-stack` (via Terraform) |
 | Logs | Fluent Bit → Elasticsearch → Kibana | Helm (via Terraform) |
 | APM | Elastic APM Server | Helm (via Terraform) |
+
+---
+
+## Arquitetura
+
+A infraestrutura é executada no Azure Kubernetes Service (AKS). O tráfego externo entra pelo ingress-nginx, enquanto a observabilidade é dividida em três pipelines:
+
+- **Métricas:** Prometheus → Grafana / Alertmanager
+- **Logs:** Fluent Bit → Elasticsearch → Kibana
+- **APM:** aplicação → APM Server → Elasticsearch → Kibana
 
 ---
 
