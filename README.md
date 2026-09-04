@@ -168,3 +168,7 @@ O APM Server foi instalado e integrado ao Elasticsearch/Kibana. A coleta foi val
 - **TLS com Let's Encrypt e domínio real**, em vez de certificado self-signed — mais representativo de um cenário de produção.
 - **Gestão de segredos via Azure Key Vault + CSI driver**, em vez de ler credenciais do Elasticsearch via `data source` do Terraform (que deixa o valor gravado no state, ainda que fora do código-fonte).
 - **Dimensionamento e autoscaling:** dimensionar melhor os recursos do cluster antes de adicionar a stack de observabilidade e utilizar mecanismos de autoscaling, como HPA ou KEDA, para ajustar automaticamente a quantidade de pods conforme a demanda. Em um cenário maior, também seria possível utilizar um node pool dedicado para os componentes de observabilidade.
+
+### Link do Vídeo - Desmonstação do codigo
+
+https://youtu.be/dtSjpolNm2Q
