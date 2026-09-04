@@ -62,12 +62,12 @@ resource "helm_release" "elasticsearch" {
     resources:
       requests:
         cpu: 300m
-        memory: 1Gi
+        memory: 750Mi
       limits:
         cpu: 1000m
-        memory: 1.5Gi
+        memory: 1Gi
 
-    esJavaOpts: "-Xms512m -Xmx512m"
+    esJavaOpts: "-Xms384m -Xmx384m"
 
     persistence:
       enabled: false
@@ -166,6 +166,7 @@ resource "null_resource" "install_apm_integration" {
         -d '{"force": true}'
     EOT
   }
+
 }
 
 resource "helm_release" "apm_server" {
@@ -212,6 +213,7 @@ resource "helm_release" "apm_server" {
   ]
 
   depends_on = [
-    helm_release.elasticsearch
+    helm_release.elasticsearch,
+    helm_release.kibana
   ]
 }

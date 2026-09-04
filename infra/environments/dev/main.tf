@@ -29,6 +29,10 @@ module "ingress_nginx" {
   depends_on          = [module.aks, azurerm_public_ip.ingress_ip]
 }
 
+module "sock_shop" {
+  source     = "../../modules/sock-shop"
+  depends_on = [module.aks]
+}
 
 module "monitoring" {
   source     = "../../modules/monitoring"
